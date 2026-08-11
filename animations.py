@@ -3,6 +3,7 @@ import sys
 import time
 
 from art_loader import load_art
+import save_system
 
 WIDTH = 62
 
@@ -18,11 +19,27 @@ def _sleep(seconds):
     time.sleep(max(0.0, seconds))
 
 
-def _draw(lines, flash=False):
+def _life_line():
+    try:
+        deaths = save_system.death_count()
+        maximum = save_system.MAX_RUN_DEATHS
+    except Exception:
+        deaths = 0
+        maximum = 5
+
+    remaining = max(0, maximum - deaths)
+    hearts = " ".join(["<3"] * remaining) if remaining else "--"
+    return f"LIVES  {hearts}"
+
+
+def _draw(lines, flash=False, show_lives=True):
     clear()
 
     if isinstance(lines, str):
         lines = lines.splitlines()
+
+    if show_lives:
+        lines = [_life_line(), ""] + list(lines)
 
     if flash:
         sys.stdout.write(ANSI_INVERT)
@@ -51,7 +68,12 @@ def _box(lines, title=""):
     return rows
 
 
-def attack_slash():
+def attack_slash(enemy_name="Enemy", damage=None):
+    """Fast basic-attack slash used by the real combat loop."""
+    result = "The strike lands."
+    if damage is not None:
+        result = f"{enemy_name} takes {damage} damage."
+
     frames = [
         [
             "",
@@ -81,17 +103,22 @@ def attack_slash():
             "",
             "SLASH!",
             "",
-            "Tower Guardian takes 14 damage.",
+            result,
             "",
         ], "ATTACK"),
     ]
 
     for i, frame in enumerate(frames):
         _draw(_center_block(frame) if i < 3 else frame, flash=(i == 2))
-        _sleep(0.07 if i < 3 else 0.45)
+        _sleep(0.055 if i < 3 else 0.22)
 
 
-def critical_hit():
+def critical_hit(damage=None, enemy_name="Enemy"):
+    """Impact flash for any real critical strike."""
+    damage_line = "Massive damage!"
+    if damage is not None:
+        damage_line = f"{enemy_name}: -{damage} HP"
+
     frames = [
         _box(["", ".", "", ""], "IMPACT"),
         _box(["", ">>> * <<<", "", ""], "IMPACT"),
@@ -100,14 +127,14 @@ def critical_hit():
             "",
             "CRITICAL HIT!",
             "",
-            "-27 HP",
+            damage_line,
             "",
         ], "IMPACT"),
     ]
 
     for i, frame in enumerate(frames):
         _draw(frame, flash=(i in (2, 3)))
-        _sleep(0.08 if i < 3 else 0.55)
+        _sleep(0.065 if i < 3 else 0.28)
 
 
 def _split_door_frame(art_lines, gap):
@@ -127,37 +154,46 @@ def _split_door_frame(art_lines, gap):
     return result
 
 
-def door_open():
+def door_open(next_floor=None, safe_haven=False):
+    """Animate the boss gate after Floors 5, 10, 15, 20, etc."""
     art = load_art("door")
     lines = art.splitlines()
 
     if not lines:
-        _draw(_box(["Door art is missing."], "DOOR TEST"))
-        _sleep(0.6)
+        _draw(_box(["Door art is missing."], "BOSS GATE"))
+        _sleep(0.4)
         return
 
     for pad in (0, 2, 0, 1):
         shifted = [(" " * pad) + line for line in lines]
         _draw(shifted, flash=(pad == 2))
-        _sleep(0.07)
+        _sleep(0.055)
+
+    if safe_haven:
+        label = "SAFE HAVEN AHEAD"
+    elif next_floor is not None:
+        label = f"THE WAY TO FLOOR {next_floor} OPENS"
+    else:
+        label = "THE WAY OPENS"
 
     for gap in (2, 5, 9, 14):
         frame = _split_door_frame(lines, gap)
         width = max(len(x) for x in frame)
-        frame += ["", "THE WAY OPENS".center(width)]
+        frame += ["", label.center(width)]
         _draw(frame)
-        _sleep(0.13)
+        _sleep(0.10)
 
-    _sleep(0.45)
+    _sleep(0.22)
 
 
-def safe_haven_reveal():
+def safe_haven_reveal(completed_floor=None):
+    """Reveal the Safe Haven once when a 20-floor milestone is reached."""
     art = load_art("safe_haven")
     lines = art.splitlines()
 
     if not lines:
         _draw(_box(["Safe Haven art is missing."], "SAFE HAVEN"))
-        _sleep(0.6)
+        _sleep(0.4)
         return
 
     step = max(1, len(lines) // 7)
@@ -166,11 +202,15 @@ def safe_haven_reveal():
         frame = lines[:shown]
         frame += ["", " " * 20 + "The darkness begins to lift..."]
         _draw(frame)
-        _sleep(0.13)
+        _sleep(0.10)
         shown += step
 
     _draw(lines, flash=True)
-    _sleep(0.16)
+    _sleep(0.12)
+
+    checkpoint_text = "CHECKPOINT ESTABLISHED"
+    if completed_floor is not None:
+        checkpoint_text = f"DEATH CHECKPOINT: FLOOR {completed_floor}"
 
     final = list(lines)
     final += [
@@ -178,11 +218,11 @@ def safe_haven_reveal():
         "+" + "=" * WIDTH + "+",
         "|" + " SAFE HAVEN FOUND ".center(WIDTH) + "|",
         "+" + "=" * WIDTH + "+",
-        "|" + " CHECKPOINT ESTABLISHED ".center(WIDTH) + "|",
+        "|" + f" {checkpoint_text} ".center(WIDTH) + "|",
         "+" + "=" * WIDTH + "+",
     ]
     _draw(final)
-    _sleep(0.75)
+    _sleep(0.48)
 
 
 def _bar(value, maximum, size=24):
@@ -192,20 +232,30 @@ def _bar(value, maximum, size=24):
     return "[" + "#" * filled + "." * (size - filled) + "]"
 
 
-def level_up():
-    old_level = 7
-    new_level = 8
-    maximum = 70
+def level_up(old_level=1, new_level=2, skill_points=None):
+    """Level-up flash using the player's real level values."""
+    if new_level <= old_level:
+        return
 
-    for xp in (48, 53, 58, 63, 67, 70):
+    # A short fill is deliberately symbolic; actual XP is shown again
+    # immediately by the normal player panel after the animation.
+    maximum = 20
+    for xp in (4, 8, 12, 16, 20):
         _draw(_box([
             "",
             f"Level {old_level}",
             "",
-            f"XP {_bar(xp, maximum)} {xp}/{maximum}",
+            f"XP {_bar(xp, maximum)}",
             "",
         ], "EXPERIENCE"))
-        _sleep(0.10)
+        _sleep(0.07)
+
+    point_text = "+1 SKILL POINT"
+    gained = new_level - old_level
+    if gained > 1:
+        point_text = f"+{gained} SKILL POINTS"
+    if skill_points is not None:
+        point_text += f"  |  AVAILABLE: {skill_points}"
 
     _draw(_box([
         "",
@@ -213,34 +263,47 @@ def level_up():
         "",
         f"LEVEL {old_level}  ->  LEVEL {new_level}",
         "",
-        "+1 SKILL POINT",
+        point_text,
         "",
     ], "HUNTER ASCENDS"), flash=True)
-    _sleep(0.75)
+    _sleep(0.48)
 
 
-def healing():
-    current = 31
-    maximum = 80
+def healing(start_hp=31, end_hp=49, max_hp=80, label="HEALING"):
+    """Animate an actual HP increase."""
+    start_hp = max(0, min(max_hp, int(start_hp)))
+    end_hp = max(0, min(max_hp, int(end_hp)))
 
-    for hp in (31, 34, 37, 40, 43, 46, 49):
-        gain = hp - current
+    if end_hp <= start_hp:
+        return
+
+    distance = end_hp - start_hp
+    steps = min(6, max(2, distance))
+    values = []
+
+    for step in range(steps + 1):
+        value = start_hp + round(distance * step / steps)
+        if not values or value != values[-1]:
+            values.append(value)
+
+    for hp in values:
+        gain = hp - start_hp
         _draw(_box([
             "",
-            f"HP {_bar(hp, maximum)} {hp}/{maximum}",
+            f"HP {_bar(hp, max_hp)} {hp}/{max_hp}",
             "",
-            f"+{gain} HP" if gain else "Potion uncorked...",
+            f"+{gain} HP" if gain else "Restoring health...",
             "",
-        ], "HEALING"))
-        _sleep(0.10)
+        ], label))
+        _sleep(0.07)
 
-    _sleep(0.35)
+    _sleep(0.18)
 
 
 def run_showcase():
-    attack_slash()
-    critical_hit()
-    door_open()
-    safe_haven_reveal()
-    level_up()
-    healing()
+    attack_slash("Tower Guardian", 14)
+    critical_hit(27, "Tower Guardian")
+    door_open(21, safe_haven=True)
+    safe_haven_reveal(20)
+    level_up(7, 8, 1)
+    healing(31, 49, 80)

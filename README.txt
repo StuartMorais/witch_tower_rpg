@@ -243,3 +243,25 @@ a lost heart.
 
 Important: the original pre-Floor-20 permadeath rule still applies. The
 five-heart limit becomes useful once a Safe Haven has been reached.
+
+
+LIVE GAMEPLAY ANIMATIONS
+------------------------
+The approved animation set is now wired into normal gameplay:
+
+- Basic Attack -> slash animation
+- Critical basic/skill hit -> critical impact animation
+- Healing potion -> animated HP recovery
+- Second Wind -> animated HP recovery
+- Recovery Room heal -> animated HP recovery
+- Boss gate -> animated door opening
+- Floor 20/40/60... -> Safe Haven reveal
+- Level-up after combat -> level-up animation
+- First launch -> rain animation
+
+Still intentionally excluded:
+- chest opening animation
+- boss entrance animation
+- boss death animation
+
+The Effect Lab remains available for preview/testing.

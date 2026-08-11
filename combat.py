@@ -1,7 +1,9 @@
 import random
+import re
 from data import ITEM_DATA
 import skills
 import ui
+import animations
 from art_loader import load_item_art
 
 
@@ -109,7 +111,14 @@ def _combat_item_menu(player, enemy):
         print()
         print(load_item_art(item))
         player.remove_item(item)
+        old_hp = player.hp
         restored = player.heal(ITEM_DATA[item]["value"])
+        animations.healing(
+            old_hp,
+            player.hp,
+            player.max_hp,
+            label=item.upper(),
+        )
         return True, f"You restore {restored} HP.", None
 
     if item == "Bomb":
@@ -151,6 +160,9 @@ def run_combat(player, enemy):
 
         if action == 1:
             damage, critical = _player_attack(player, enemy)
+            animations.attack_slash(enemy.name, damage)
+            if critical:
+                animations.critical_hit(damage, enemy.name)
             message = f"You deal {damage} damage."
             if critical:
                 message += " CRITICAL!"
@@ -158,6 +170,10 @@ def run_combat(player, enemy):
 
         elif action == 2:
             turn_used, message = _use_skill(player, enemy)
+            if turn_used and "critical" in message.lower():
+                match = re.search(r"deals\s+(\d+)", message, flags=re.IGNORECASE)
+                crit_damage = int(match.group(1)) if match else None
+                animations.critical_hit(crit_damage, enemy.name)
 
         elif action == 3:
             turn_used, message, special = _combat_item_menu(player, enemy)
@@ -203,9 +219,26 @@ def run_combat(player, enemy):
         return "dead"
 
     player.gold += enemy.gold
+
+    old_level = player.level
     levels = player.add_xp(enemy.xp)
+    if levels:
+        animations.level_up(
+            old_level,
+            player.level,
+            player.skill_points,
+        )
+
     victory_heal = skills.victory_heal(player, enemy)
+    old_hp = player.hp
     restored = player.heal(victory_heal) if victory_heal else 0
+    if restored:
+        animations.healing(
+            old_hp,
+            player.hp,
+            player.max_hp,
+            label="SECOND WIND",
+        )
 
     ui.combat_screen(player, enemy)
     print(f"{enemy.name} defeated.")

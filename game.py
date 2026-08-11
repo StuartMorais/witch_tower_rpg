@@ -9,6 +9,7 @@ from combat import run_combat
 import skills
 import save_system
 import ui
+import animations
 from art_loader import load_art, load_item_art
 
 
@@ -194,8 +195,10 @@ class Game:
                     save_system.save_game(self.player, self.tower_seed)
 
     def ascend_transition(self, next_floor, safe_haven=False):
+        animations.door_open(next_floor, safe_haven=safe_haven)
+
         ui.clear()
-        print(load_art("door"))
+        ui.show_heart_hud()
         print()
 
         if safe_haven:
@@ -208,7 +211,7 @@ class Game:
         ui.box([
             f"The path to Floor {next_floor} is now open.",
             "",
-            "The guardian is dead. Ancient stone doors part.",
+            "The guardian is dead. Ancient stone doors have opened.",
             destination,
         ], title=title, border="=")
         ui.pause()
@@ -349,7 +352,15 @@ class Game:
         Current progress is autosaved here, but the protected death
         checkpoint remains the most recent 20-floor Safe Haven.
         """
+        old_hp = self.player.hp
         self.player.full_heal()
+        if self.player.hp > old_hp:
+            animations.healing(
+                old_hp,
+                self.player.hp,
+                self.player.max_hp,
+                label="RECOVERY ROOM",
+            )
         save_system.save_game(self.player, self.tower_seed)
 
         while True:
@@ -387,13 +398,25 @@ class Game:
         Normal progress continues to autosave on every floor. This separate
         snapshot is used only when the player dies.
         """
+        old_hp = self.player.hp
         self.player.full_heal()
+        if self.player.hp > old_hp:
+            animations.healing(
+                old_hp,
+                self.player.hp,
+                self.player.max_hp,
+                label="SAFE HAVEN",
+            )
+
         save_system.save_game(self.player, self.tower_seed)
         save_system.save_checkpoint(
             self.player,
             self.tower_seed,
             safe_haven_floor=completed_floor,
         )
+
+        # Reveal the sanctuary only when the milestone is first reached.
+        animations.safe_haven_reveal(completed_floor)
 
         while True:
             ui.safe_haven_screen(self.player, completed_floor)
@@ -460,7 +483,18 @@ class Game:
             if art:
                 print()
                 print(art)
+
+            old_hp = self.player.hp
             message = self.player.use_field_item(item)
+
+            if self.player.hp > old_hp:
+                animations.healing(
+                    old_hp,
+                    self.player.hp,
+                    self.player.max_hp,
+                    label=item.upper(),
+                )
+
             print("\n" + message)
             ui.pause()
 
