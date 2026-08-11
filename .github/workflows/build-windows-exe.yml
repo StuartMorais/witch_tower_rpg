@@ -1,0 +1,67 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.py"
+      - "art/**"
+      - "WitchTower.spec"
+      - "requirements-build.txt"
+      - ".github/workflows/build-windows-exe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build WitchTower.exe
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          architecture: "x64"
+          cache: "pip"
+          cache-dependency-path: requirements-build.txt
+
+      - name: Install build tools
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-build.txt
+
+      - name: Check Python source
+        shell: pwsh
+        run: |
+          python -m compileall -q .
+
+      - name: Build WitchTower.exe
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean WitchTower.spec
+
+      - name: Verify executable exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/WitchTower.exe")) {
+            throw "dist/WitchTower.exe was not created."
+          }
+
+          $size = (Get-Item "dist/WitchTower.exe").Length
+          Write-Host "Built WitchTower.exe ($size bytes)"
+
+      - name: Upload WitchTower.exe
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/WitchTower.exe
+          archive: false
+          if-no-files-found: error
+          retention-days: 30

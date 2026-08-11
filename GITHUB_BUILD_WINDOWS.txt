@@ -1,0 +1,87 @@
+WITCH TOWER - GITHUB WINDOWS BUILD
+==================================
+
+The repository now contains a GitHub Actions workflow that builds:
+
+    WitchTower.exe
+
+The executable is a 64-bit Windows console application. Python does not
+need to be installed on the computer that runs the finished EXE.
+
+FILES ADDED
+-----------
+.github/workflows/build-windows-exe.yml
+    GitHub Actions workflow.
+
+WitchTower.spec
+    PyInstaller configuration. Includes the complete art/ directory.
+
+requirements-build.txt
+    Build-only dependency pin for PyInstaller.
+
+.gitignore
+    Ignores local build output, Python caches, and player save JSON files.
+
+HOW TO BUILD ON GITHUB
+----------------------
+1. Create a GitHub repository.
+
+2. Put the CONTENTS of this witch_tower_rpg folder at the repository root.
+   In other words, GitHub should show files like:
+
+       main.py
+       game.py
+       WitchTower.spec
+       art/
+       .github/
+
+   Do not put the whole project inside another extra folder unless you also
+   update the workflow paths.
+
+3. Commit and push to the main branch.
+
+4. Open the repository on GitHub.
+
+5. Open:
+       Actions -> Build Windows EXE
+
+6. A build runs automatically after a relevant push to main.
+
+   You can also start one manually:
+       Actions -> Build Windows EXE -> Run workflow
+
+7. When the job finishes, download WitchTower.exe from the workflow run.
+
+SAVES IN THE EXE BUILD
+----------------------
+The packaged game writes its save folder beside the executable:
+
+    WitchTower.exe
+    saves/
+        savegame.json
+        safe_haven.json
+
+This allows normal autosaves and the protected 20-floor death checkpoint
+to survive after closing the EXE.
+
+The source-code version still writes saves inside the project folder.
+
+BUILD DETAILS
+-------------
+GitHub runner:
+    windows-latest
+
+Python:
+    3.13 x64
+
+Packager:
+    PyInstaller 6.21.0
+
+Mode:
+    one-file / console executable
+
+Bundled data:
+    complete art/ directory
+
+The existing project savegame is intentionally ignored by Git through
+.gitignore so a fresh repository/build does not publish player progress.

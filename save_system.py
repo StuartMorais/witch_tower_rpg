@@ -1,9 +1,21 @@
 import json
+import sys
 from pathlib import Path
 
 from player import Player
 
-SAVE_DIR = Path(__file__).resolve().parent / "saves"
+def _game_data_root():
+    """
+    Source build: keep saves inside the project folder.
+    PyInstaller build: keep saves beside WitchTower.exe so they persist
+    between launches instead of living in PyInstaller's temporary directory.
+    """
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
+SAVE_DIR = _game_data_root() / "saves"
 
 # Latest normal progress. Used by "Continue saved climb".
 SAVE_FILE = SAVE_DIR / "savegame.json"

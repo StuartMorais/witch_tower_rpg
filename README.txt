@@ -183,3 +183,19 @@ Available preview animations:
 The chest animation is intentionally NOT included.
 
 The rain animation remains on the first title screen when the game launches.
+
+
+WINDOWS EXE BUILD
+-----------------
+A GitHub Actions + PyInstaller build is included.
+
+See:
+
+    GITHUB_BUILD_WINDOWS.txt
+
+The workflow creates a standalone 64-bit Windows console executable:
+
+    WitchTower.exe
+
+In the packaged build, saves are stored beside WitchTower.exe so autosaves
+and Safe Haven death checkpoints persist normally.
