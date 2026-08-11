@@ -82,8 +82,8 @@ TOWER_ART = load_art("castle")
 # MAIN MENU RAIN
 # ------------------------------------------------------------
 
-RAIN_FRAMES = 18
-RAIN_DELAY = 0.055
+RAIN_FRAMES = 22
+RAIN_DELAY = 0.075
 RAIN_DROPS = 46
 
 

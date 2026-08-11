@@ -265,3 +265,26 @@ Still intentionally excluded:
 - boss death animation
 
 The Effect Lab remains available for preview/testing.
+
+
+ANIMATION SPEED
+---------------
+Gameplay animations were slowed down for readability.
+
+The main timing control is in:
+
+    animations.py
+
+Change:
+
+    ANIMATION_SPEED = 1.8
+
+Examples:
+
+    1.0 = original fast speed
+    1.5 = moderately slower
+    1.8 = current setting
+    2.0 = twice as slow
+
+The title-screen rain uses separate RAIN_FRAMES and RAIN_DELAY values
+inside ui.py.

@@ -10,13 +10,20 @@ WIDTH = 62
 ANSI_RESET = "\033[0m"
 ANSI_INVERT = "\033[7m"
 
+# Global animation timing multiplier.
+# 1.0 = original speed
+# 1.5 = 50% slower
+# 1.8 = current game setting
+# 2.0 = twice as slow
+ANIMATION_SPEED = 1.8
+
 
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
 
 
 def _sleep(seconds):
-    time.sleep(max(0.0, seconds))
+    time.sleep(max(0.0, seconds) * ANIMATION_SPEED)
 
 
 def _life_line():
