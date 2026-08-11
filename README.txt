@@ -348,3 +348,21 @@ GitHub Releases page together with a SHA256 checksum.
 Normal pushes/manual builds still produce an Actions artifact.
 
 See GITHUB_BUILD_WINDOWS.txt for the complete release workflow.
+
+
+AUTOMATIC RELEASE PAGE
+----------------------
+Every successful Windows build is now also published to GitHub Releases,
+so WitchTower.exe appears in the repository's Releases section.
+
+Normal/manual builds use automatic build tags such as build-42.
+Version tags such as v0.1.0 keep their versioned Release names.
+
+
+BOSS DOOR LAYOUT
+----------------
+The BLUE and RED boss-door choice screen now:
+
+- shows "BLUE DOOR" and "RED DOOR" clearly above the doors
+- renders both tinted door.txt arts side by side
+- keeps the subtle wind / miasma presentation

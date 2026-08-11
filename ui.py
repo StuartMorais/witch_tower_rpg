@@ -93,7 +93,7 @@ def boss_door_choice(current_multiplier):
     BLUE = keep the current difficulty.
     RED  = double the current difficulty.
 
-    The choice screen itself is intentionally more subtle and atmospheric.
+    The presentation is atmospheric and keeps both doors visible at once.
     """
     current_multiplier = max(1, int(current_multiplier))
     red_multiplier = current_multiplier * 2
@@ -103,29 +103,49 @@ def boss_door_choice(current_multiplier):
     print()
 
     door_art = load_art("door")
-    blue_door = _tint_ascii_art(door_art, ANSI_BLUE)
-    red_door = _tint_ascii_art(door_art, ANSI_RED)
+    blue_lines = _tint_ascii_art(door_art, ANSI_BLUE).splitlines()
+    red_lines = _tint_ascii_art(door_art, ANSI_RED).splitlines()
+
+    door_width = max(
+        max((len(line) for line in blue_lines), default=0),
+        max((len(line) for line in red_lines), default=0),
+    )
+    gap = " " * 8
+
+    # Pad both art blocks to same height/width.
+    height = max(len(blue_lines), len(red_lines))
+    blue_lines += [""] * (height - len(blue_lines))
+    red_lines += [""] * (height - len(red_lines))
+
+    def pad(line):
+        visible = line.replace(ANSI_BLUE, "").replace(ANSI_RED, "").replace(ANSI_RESET, "")
+        extra = max(0, door_width - len(visible))
+        return line + (" " * extra)
 
     box([
         "Beyond the fallen guardian, two ancient gates stand in silence.",
         "",
-        "From the blue-lit threshold comes a cool, refreshing wind.",
-        "From the red-lit threshold seeps a dense and hostile miasma.",
+        "A cool, refreshing wind drifts from the blue-lit threshold.",
+        "A dense and oppressive miasma seeps from the red-lit threshold.",
         "",
         "One path feels steady. The other feels dangerous.",
     ], title="THE FORK BEYOND THE BOSS", border="=")
 
     print()
-    print(ANSI_BLUE + "BLUE DOOR" + ANSI_RESET)
-    print(blue_door)
-    print()
-    print("A refreshing wind brushes past your face.")
+
+    blue_title = (ANSI_BLUE + "BLUE DOOR" + ANSI_RESET).center(door_width)
+    red_title = (ANSI_RED + "RED DOOR" + ANSI_RESET).center(door_width)
+    print(blue_title + gap + red_title)
+    print(("A refreshing wind rises.").center(door_width) + gap +
+          ("A strong miasma rolls out.").center(door_width))
     print()
 
-    print(ANSI_RED + "RED DOOR" + ANSI_RESET)
-    print(red_door)
+    for left, right in zip(blue_lines, red_lines):
+        print(pad(left) + gap + pad(right))
+
     print()
-    print("A strong miasma rolls from the darkness beyond.")
+    print(f"  [1] Step through the blue door  (keep x{current_multiplier})")
+    print(f"  [2] Step through the red door   (increase to x{red_multiplier})")
     print()
 
     choice = menu([

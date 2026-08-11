@@ -159,3 +159,35 @@ GitHub packages those two files together as a workflow artifact.
 
 The versioned GitHub Release is different: WitchTower.exe and its SHA256
 file are attached to the Release individually as raw downloadable assets.
+
+
+AUTOMATIC GITHUB RELEASES
+-------------------------
+Every successful workflow build now publishes WitchTower.exe to the
+repository's GitHub Releases section.
+
+NORMAL PUSH TO MAIN
+    Release tag:
+        build-<GitHub Actions run number>
+
+    Example:
+        build-42
+
+    Release title:
+        The Witch Tower Build #42
+
+MANUAL "RUN WORKFLOW"
+    Works the same way as a normal build and creates a published Release.
+
+VERSION TAG
+    Pushing a version tag such as v0.1.0 creates:
+
+        The Witch Tower v0.1.0
+
+Every Release contains:
+
+    WitchTower.exe
+    WitchTower.exe.sha256
+
+This is what makes the repository sidebar's "Releases" section populate.
+The Actions artifact is still kept as a second download method.
