@@ -199,3 +199,47 @@ The workflow creates a standalone 64-bit Windows console executable:
 
 In the packaged build, saves are stored beside WitchTower.exe so autosaves
 and Safe Haven death checkpoints persist normally.
+
+
+FIVE-DEATH PERMADEATH RULE
+--------------------------
+Each run has a maximum of 5 total deaths.
+
+- Before Floor 20, the original permadeath rule still applies:
+  the first death ends the run because no Safe Haven exists yet.
+- After reaching a Safe Haven, deaths 1 through 4 rewind the character
+  to the latest 20-floor death checkpoint.
+- Death #5 permanently erases the entire run, even if the player has
+  reached one or more Safe Havens.
+- The death counter never rewinds when loading a Safe Haven.
+- Quitting and reopening the game does not reset the counter.
+- Starting a completely new run resets the counter to 0.
+
+Run-wide death history is stored in:
+
+    saves/run_meta.json
+
+In the Windows EXE build it is stored beside WitchTower.exe with the
+other save files.
+
+
+HEART / LIFE HUD
+----------------
+The top-left corner shows the run's remaining death limit using ASCII hearts:
+
+    LIVES  <3 <3 <3 <3 <3
+
+Each recorded death removes one permanently:
+
+    Deaths 0 -> <3 <3 <3 <3 <3
+    Deaths 1 -> <3 <3 <3 <3
+    Deaths 2 -> <3 <3 <3
+    Deaths 3 -> <3 <3
+    Deaths 4 -> <3
+    Deaths 5 -> --  FINAL PERMADEATH
+
+The display reads saves/run_meta.json, so Safe Haven rewinds cannot restore
+a lost heart.
+
+Important: the original pre-Floor-20 permadeath rule still applies. The
+five-heart limit becomes useful once a Safe Haven has been reached.

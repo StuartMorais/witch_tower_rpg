@@ -121,6 +121,7 @@ class Game:
         self.player = Player.create(name, class_id)
         self.tower_seed = random.randint(100000, 999999999)
         self.tower = Tower(self.tower_seed)
+        save_system.reset_death_count()
 
         ui.clear()
         ui.box([
@@ -533,9 +534,33 @@ class Game:
         death_name = self.player.name
         death_floor = self.player.floor
 
-        # Regular floor autosaves are NOT resurrection points.
+        # Death history is run-wide and is never restored from a checkpoint.
+        death_number, final_death = save_system.record_death()
+
+        # The fifth death destroys the run even if a Safe Haven exists.
+        if final_death:
+            ui.final_permadeath_screen(
+                death_name,
+                death_floor,
+                death_number,
+                save_system.MAX_RUN_DEATHS,
+            )
+            save_system.delete_save()
+            self.player = None
+            self.tower = None
+            self.tower_seed = None
+            ui.pause()
+            return False
+
+        # Original permadeath rule still applies before the first Safe Haven.
         if not save_system.has_checkpoint():
-            ui.death_rewind_screen(death_name, death_floor, safe_floor=None)
+            ui.death_rewind_screen(
+                death_name,
+                death_floor,
+                safe_floor=None,
+                death_number=death_number,
+                max_deaths=save_system.MAX_RUN_DEATHS,
+            )
             save_system.delete_save()
             self.player = None
             self.tower = None
@@ -544,18 +569,27 @@ class Game:
             return False
 
         safe_floor = save_system.checkpoint_floor()
-        ui.death_rewind_screen(death_name, death_floor, safe_floor=safe_floor)
+        ui.death_rewind_screen(
+            death_name,
+            death_floor,
+            safe_floor=safe_floor,
+            death_number=death_number,
+            max_deaths=save_system.MAX_RUN_DEATHS,
+        )
         ui.pause("Press ENTER to return to the Safe Haven...")
 
         # Deliberately ignore savegame.json and load the protected 20-floor
-        # checkpoint. Then make that rollback the new normal autosave.
+        # checkpoint. The death counter remains in run_meta.json.
         self.player, self.tower_seed = save_system.restore_checkpoint_to_current()
         self.tower = Tower(self.tower_seed)
 
         ui.safe_haven_screen(self.player, safe_floor)
+        remaining = save_system.MAX_RUN_DEATHS - death_number
         print(
             f"\nDeath rollback complete. You resume at Floor {self.player.floor}.\n"
-            f"Autosaved progress after the Floor {safe_floor} Safe Haven was lost."
+            f"Autosaved progress after the Floor {safe_floor} Safe Haven was lost.\n"
+            f"Run deaths: {death_number}/{save_system.MAX_RUN_DEATHS} "
+            f"({remaining} remaining before permanent death)."
         )
         ui.pause()
         return True
@@ -575,7 +609,11 @@ class Game:
             "",
             "PERMADEATH",
             "Before Floor 20: death permanently ends the run.",
-            "After a Safe Haven: death rewinds to the previous 20-floor checkpoint.",
+            "After a Safe Haven: deaths rewind to the previous 20-floor checkpoint.",
+            "Deaths are cumulative and never rewind with a checkpoint.",
+            "The top-left LIVES display shows the remaining hearts.",
+            "Each death permanently removes one heart from the run.",
+            "Death #5 permanently ends the entire run, regardless of Safe Havens.",
             "Example: dying on Floor 37 returns to the Floor 20 checkpoint.",
             "",
             "COMBAT",

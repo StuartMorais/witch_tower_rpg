@@ -23,6 +23,12 @@ SAVE_FILE = SAVE_DIR / "savegame.json"
 # Protected death rollback snapshot. Updated only every 20 floors.
 CHECKPOINT_FILE = SAVE_DIR / "safe_haven.json"
 
+# Run-wide metadata that must NEVER rewind with a Safe Haven snapshot.
+# The death counter lives here so returning to Floor 20 cannot erase deaths.
+META_FILE = SAVE_DIR / "run_meta.json"
+
+MAX_RUN_DEATHS = 5
+
 
 def _read_json(path):
     try:
@@ -79,6 +85,7 @@ def has_checkpoint():
 def save_game(player, tower_seed):
     """Autosave the latest active climb."""
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_run_meta()
 
     data = {
         "version": 3,
@@ -167,6 +174,70 @@ def restore_checkpoint_to_current():
     return player, tower_seed
 
 
+def _default_meta():
+    return {
+        "version": 1,
+        "death_count": 0,
+    }
+
+
+def _read_meta():
+    if not META_FILE.exists():
+        return _default_meta()
+
+    data = _read_json(META_FILE)
+    if not isinstance(data, dict):
+        return _default_meta()
+
+    try:
+        deaths = max(0, int(data.get("death_count", 0)))
+    except (TypeError, ValueError):
+        deaths = 0
+
+    return {
+        "version": 1,
+        "death_count": deaths,
+    }
+
+
+def _write_meta(data):
+    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    META_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def ensure_run_meta():
+    """Create metadata for the active run if it does not exist yet."""
+    if not META_FILE.exists():
+        _write_meta(_default_meta())
+
+
+def death_count():
+    return _read_meta()["death_count"]
+
+
+def remaining_deaths():
+    return max(0, MAX_RUN_DEATHS - death_count())
+
+
+def record_death():
+    """
+    Add one irreversible death to the current run.
+
+    Returns:
+        (death_number, permadeath_reached)
+    """
+    meta = _read_meta()
+    meta["death_count"] += 1
+    _write_meta(meta)
+
+    count = meta["death_count"]
+    return count, count >= MAX_RUN_DEATHS
+
+
+def reset_death_count():
+    _write_meta(_default_meta())
+
+
 def delete_current_save():
     if SAVE_FILE.exists():
         SAVE_FILE.unlink()
@@ -177,7 +248,13 @@ def delete_checkpoint():
         CHECKPOINT_FILE.unlink()
 
 
+def delete_meta():
+    if META_FILE.exists():
+        META_FILE.unlink()
+
+
 def delete_save():
-    """Delete the entire run."""
+    """Delete the entire run, including its irreversible death history."""
     delete_current_save()
     delete_checkpoint()
+    delete_meta()

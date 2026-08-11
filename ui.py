@@ -3,6 +3,7 @@ import random
 import sys
 import time
 from art_loader import load_art
+import save_system
 
 WIDTH = 62
 
@@ -13,6 +14,24 @@ def clear():
 
 def line(char="-"):
     print("+" + char * WIDTH + "+")
+
+
+def heart_hud():
+    """ASCII life counter based on irreversible run deaths."""
+    try:
+        deaths = save_system.death_count()
+        maximum = save_system.MAX_RUN_DEATHS
+    except Exception:
+        deaths = 0
+        maximum = 5
+
+    remaining = max(0, maximum - deaths)
+    hearts = " ".join(["<3"] * remaining) if remaining else "--"
+    return f"LIVES  {hearts}"
+
+
+def show_heart_hud():
+    print(heart_hud())
 
 
 def box(lines, title=None, border="-"):
@@ -117,6 +136,8 @@ def rain_tower_intro():
 
     for _ in range(RAIN_FRAMES):
         clear()
+        show_heart_hud()
+        print()
         final_frame = _make_rain_frame(art_lines, drops, width)
         print(final_frame)
         sys.stdout.flush()
@@ -164,7 +185,7 @@ def _render_shifted(lines, x=0, y=0, flash=False):
 
 def combat_frame_lines(player, enemy, damage_text=None):
     """Return the combat panel as plain ASCII lines for animation."""
-    rows = []
+    rows = [heart_hud(), ""]
     rows.append("+" + "=" * WIDTH + "+")
     rows.append("|" + " COMBAT ".center(WIDTH) + "|")
     rows.append("+" + "=" * WIDTH + "+")
@@ -344,6 +365,8 @@ def title_screen():
     rainy_tower = rain_tower_intro()
 
     clear()
+    show_heart_hud()
+    print()
     print(rainy_tower)
     box([
         "An endless tower rises beyond Thornwatch Camp.",
@@ -355,6 +378,8 @@ def title_screen():
 
 def camp_screen(has_save, has_checkpoint=False):
     clear()
+    show_heart_hud()
+    print()
     print(TOWER_ART)
     box([
         "THORNWATCH CAMP - TOWER ENTRANCE",
@@ -373,7 +398,11 @@ def camp_screen(has_save, has_checkpoint=False):
     else:
         print("\n  No saved climb. Death before Floor 20 ends the run.\n")
 
-def player_panel(player):
+def player_panel(player, show_hearts=True):
+    if show_hearts:
+        show_heart_hud()
+        print()
+
     box([
         f"Name : {player.name:<18} Class : {player.class_name}",
         f"Level: {player.level:<10} Skill Points: {player.skill_points:<5} Floor: {player.floor}",
@@ -386,6 +415,8 @@ def player_panel(player):
 
 def floor_screen(player, theme, room_name, boss=False):
     clear()
+    show_heart_hud()
+    print()
     block_start = ((player.floor - 1) // 5) * 5 + 1
     block_end = block_start + 4
     label = "BOSS FLOOR" if boss else "TOWER FLOOR"
@@ -398,7 +429,7 @@ def floor_screen(player, theme, room_name, boss=False):
         theme["tagline"],
     ], title="THE WITCH TOWER", border="=")
     print()
-    player_panel(player)
+    player_panel(player, show_hearts=False)
     print()
 
 
@@ -408,6 +439,8 @@ def combat_screen(player, enemy):
 
 def recovery_room_screen(player, completed_floor):
     clear()
+    show_heart_hud()
+    print()
     print(r"""
 +==============================================================+
 |                       RECOVERY ROOM                          |
@@ -428,11 +461,13 @@ def recovery_room_screen(player, completed_floor):
         "This does NOT move your protected death checkpoint.",
     ], title="REST - AUTOSAVE", border="-")
     print()
-    player_panel(player)
+    player_panel(player, show_hearts=False)
 
 
 def safe_haven_screen(player, completed_floor):
     clear()
+    show_heart_hud()
+    print()
     print(load_art("safe_haven"))
     print()
     box([
@@ -441,26 +476,64 @@ def safe_haven_screen(player, completed_floor):
         f"Death will return you here and resume at Floor {completed_floor + 1}.",
     ], title="CHECKPOINT SAVED", border="=")
     print()
-    player_panel(player)
+    player_panel(player, show_hearts=False)
 
 
-def death_rewind_screen(name, death_floor, safe_floor=None):
+def death_rewind_screen(
+    name,
+    death_floor,
+    safe_floor=None,
+    death_number=None,
+    max_deaths=5,
+):
     clear()
+    show_heart_hud()
+    print()
+
+    count_line = ""
+    if death_number is not None:
+        count_line = f"Run deaths: {death_number}/{max_deaths}"
 
     if safe_floor is None:
-        box([
+        lines = [
             f"{name} fell on Floor {death_floor}.",
             "",
             "No Safe Haven was reached.",
             "This run is permanently lost.",
             "A new hunter must begin again from Floor 1.",
-        ], title="PERMADEATH", border="=")
+        ]
+        if count_line:
+            lines.insert(2, count_line)
+
+        box(lines, title="PERMADEATH", border="=")
         return
 
-    box([
+    remaining = max(0, max_deaths - (death_number or 0))
+    lines = [
         f"{name} fell on Floor {death_floor}.",
+        "",
+        count_line,
+        f"Deaths remaining before permanent death: {remaining}",
         "",
         f"Safe Haven after Floor {safe_floor} answers the death.",
         f"Everything gained after that checkpoint is lost.",
         f"You return to the saved state and resume at Floor {safe_floor + 1}.",
-    ], title="DEATH - CHECKPOINT REWIND", border="=")
+    ]
+    box(lines, title="DEATH - CHECKPOINT REWIND", border="=")
+
+
+def final_permadeath_screen(name, death_floor, death_number, max_deaths=5):
+    clear()
+    show_heart_hud()
+    print()
+    box([
+        f"{name} fell on Floor {death_floor}.",
+        "",
+        f"Run deaths: {death_number}/{max_deaths}",
+        "",
+        "The final death has been spent.",
+        "No Safe Haven can call this hunter back.",
+        "",
+        "The entire run is permanently erased.",
+        "A new hunter must begin again from Floor 1.",
+    ], title="FINAL PERMADEATH", border="=")

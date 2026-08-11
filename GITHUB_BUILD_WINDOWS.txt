@@ -60,6 +60,7 @@ The packaged game writes its save folder beside the executable:
     saves/
         savegame.json
         safe_haven.json
+        run_meta.json
 
 This allows normal autosaves and the protected 20-floor death checkpoint
 to survive after closing the EXE.
