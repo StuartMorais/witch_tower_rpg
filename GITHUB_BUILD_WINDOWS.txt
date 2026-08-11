@@ -146,3 +146,16 @@ The workflow declares:
 
 This gives the repository GITHUB_TOKEN permission to create Releases.
 No personal access token is required for the Release step.
+
+
+ACTIONS ARTIFACT FORMAT
+-----------------------
+The normal "WitchTower-Windows" Actions artifact contains both:
+
+    WitchTower.exe
+    WitchTower.exe.sha256
+
+GitHub packages those two files together as a workflow artifact.
+
+The versioned GitHub Release is different: WitchTower.exe and its SHA256
+file are attached to the Release individually as raw downloadable assets.
