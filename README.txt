@@ -318,3 +318,19 @@ at the same time as HP would make a 2x choice much harsher than an actual
 
 The selected multiplier is part of Player save data, so it persists through
 autosaves and is restored correctly by 20-floor Safe Haven death checkpoints.
+
+
+SUBTLER BOSS DOOR PRESENTATION
+------------------------------
+The boss fork now uses the original door.txt art for both choices.
+
+- The BLUE door is shown by tinting the original door art blue.
+- The RED door is shown by tinting the original door art red.
+
+The selection text is now atmospheric rather than explicit:
+- Blue door -> a refreshing wind
+- Red door  -> a strong miasma
+
+The gameplay logic is unchanged:
+- BLUE keeps the current difficulty multiplier
+- RED doubles the current difficulty multiplier

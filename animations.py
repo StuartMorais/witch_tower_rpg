@@ -26,6 +26,16 @@ def _sleep(seconds):
     time.sleep(max(0.0, seconds) * ANIMATION_SPEED)
 
 
+def _tint_ascii_lines(lines, ansi_color):
+    tinted = []
+    for line in lines:
+        if line.strip():
+            tinted.append(f"{ansi_color}{line}{ANSI_RESET}")
+        else:
+            tinted.append(line)
+    return tinted
+
+
 def _life_line():
     try:
         deaths = save_system.death_count()
@@ -171,8 +181,16 @@ def door_open(next_floor=None, safe_haven=False, door_color=None, difficulty=1):
         _sleep(0.4)
         return
 
+    color = None
+    if door_color == "blue":
+        color = "\033[94m"
+    elif door_color == "red":
+        color = "\033[91m"
+
     for pad in (0, 2, 0, 1):
         shifted = [(" " * pad) + line for line in lines]
+        if color:
+            shifted = _tint_ascii_lines(shifted, color)
         _draw(shifted, flash=(pad == 2))
         _sleep(0.055)
 
@@ -191,9 +209,12 @@ def door_open(next_floor=None, safe_haven=False, door_color=None, difficulty=1):
         label = f"{gate_name}THE WAY OPENS"
 
     for gap in (2, 5, 9, 14):
-        frame = _split_door_frame(lines, gap)
-        width = max(len(x) for x in frame)
-        frame += ["", label.center(width)]
+        raw_frame = _split_door_frame(lines, gap)
+        width = max(len(x) for x in raw_frame)
+        frame = raw_frame + ["", label.center(width)]
+        if color:
+            colored_part = _tint_ascii_lines(raw_frame, color)
+            frame = colored_part + ["", label.center(width)]
         _draw(frame)
         _sleep(0.10)
 

@@ -34,6 +34,21 @@ def show_heart_hud():
     print(heart_hud())
 
 
+def _tint_ascii_art(art_text, ansi_color):
+    """
+    Apply ANSI color to visible lines while preserving blank spacing.
+
+    This keeps the exact art silhouette from the source text file.
+    """
+    tinted = []
+    for line in art_text.splitlines():
+        if line.strip():
+            tinted.append(f"{ansi_color}{line}{ANSI_RESET}")
+        else:
+            tinted.append(line)
+    return "\n".join(tinted)
+
+
 def box(lines, title=None, border="-"):
     line(border)
     if title:
@@ -73,10 +88,12 @@ def menu(options, prompt="Choose"):
 
 def boss_door_choice(current_multiplier):
     """
-    Show the two post-boss paths.
+    Show the post-boss fork using the same door art in different colors.
 
-    BLUE keeps the current difficulty.
-    RED doubles it for all following floors until another RED doubles it again.
+    BLUE = keep the current difficulty.
+    RED  = double the current difficulty.
+
+    The choice screen itself is intentionally more subtle and atmospheric.
     """
     current_multiplier = max(1, int(current_multiplier))
     red_multiplier = current_multiplier * 2
@@ -85,30 +102,36 @@ def boss_door_choice(current_multiplier):
     show_heart_hud()
     print()
 
-    blue = ANSI_BLUE + "BLUE DOOR" + ANSI_RESET
-    red = ANSI_RED + "RED DOOR" + ANSI_RESET
+    door_art = load_art("door")
+    blue_door = _tint_ascii_art(door_art, ANSI_BLUE)
+    red_door = _tint_ascii_art(door_art, ANSI_RED)
 
-    print("      +----------------------+      +----------------------+")
-    print(f"      |      {blue:<31}|      |       {red:<30}|")
-    print("      |                      |      |                      |")
-    print("      |       ________       |      |       ________       |")
-    print("      |      |        |      |      |      |        |      |")
-    print("      |      |        |      |      |      |        |      |")
-    print("      |      |        |      |      |      |        |      |")
-    print("      |      |________|      |      |      |________|      |")
-    print("      +----------------------+      +----------------------+")
+    box([
+        "Beyond the fallen guardian, two ancient gates stand in silence.",
+        "",
+        "From the blue-lit threshold comes a cool, refreshing wind.",
+        "From the red-lit threshold seeps a dense and hostile miasma.",
+        "",
+        "One path feels steady. The other feels dangerous.",
+    ], title="THE FORK BEYOND THE BOSS", border="=")
+
     print()
-    print(f"      BLUE: keep difficulty x{current_multiplier}")
-    print(f"      RED : double difficulty to x{red_multiplier}")
+    print(ANSI_BLUE + "BLUE DOOR" + ANSI_RESET)
+    print(blue_door)
     print()
-    print("      Enemy HP and attack scale with the multiplier.")
-    print("      Enemy rewards and defense are unchanged.")
+    print("A refreshing wind brushes past your face.")
+    print()
+
+    print(ANSI_RED + "RED DOOR" + ANSI_RESET)
+    print(red_door)
+    print()
+    print("A strong miasma rolls from the darkness beyond.")
     print()
 
     choice = menu([
-        f"BLUE DOOR - stay at x{current_multiplier}",
-        f"RED DOOR - increase to x{red_multiplier}",
-    ], "Choose a door")
+        "Step through the blue door",
+        "Step through the red door",
+    ], "Choose a path")
 
     if choice == 1:
         return "blue", current_multiplier
