@@ -1,0 +1,31 @@
+{
+  "tower_seed": 889267478,
+  "player": {
+    "name": "Fore",
+    "class_id": "wizard",
+    "level": 4,
+    "xp": 78,
+    "floor": 12,
+    "hp": 44,
+    "max_hp": 44,
+    "attack": 17,
+    "defense": 6,
+    "speed": 6,
+    "crit": 0.13,
+    "evade": 0.05,
+    "gold": 145,
+    "skill_cooldown": 0,
+    "inventory": {
+      "Armor Patch": 1,
+      "Vitality Herb": 1,
+      "Whetstone": 2
+    },
+    "skill_points": 0,
+    "skill_ranks": {
+      "arcane_precision": 1,
+      "vital_spark": 1,
+      "warding": 1,
+      "arcane_power": 1
+    }
+  }
+}
