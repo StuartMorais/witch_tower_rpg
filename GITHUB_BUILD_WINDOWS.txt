@@ -86,3 +86,63 @@ Bundled data:
 
 The existing project savegame is intentionally ignored by Git through
 .gitignore so a fresh repository/build does not publish player progress.
+
+
+GITHUB RELEASES
+---------------
+The workflow now has two output modes.
+
+NORMAL BUILD
+------------
+A push to main, or a manual "Run workflow", builds:
+
+    WitchTower.exe
+    WitchTower.exe.sha256
+
+These are available from the completed Actions workflow run as the
+"WitchTower-Windows" artifact.
+
+VERSIONED RELEASE
+-----------------
+To publish a repository Release containing the EXE, push a version tag
+beginning with "v".
+
+Example:
+
+    git tag v0.1.0
+    git push origin v0.1.0
+
+GitHub Actions will then:
+
+1. Build WitchTower.exe.
+2. Generate WitchTower.exe.sha256.
+3. Keep both files as a normal Actions artifact.
+4. Create a GitHub Release named:
+
+       The Witch Tower v0.1.0
+
+5. Attach:
+
+       WitchTower.exe
+       WitchTower.exe.sha256
+
+6. Generate release notes automatically.
+
+If the workflow is rerun for a tag whose Release already exists, it
+replaces the EXE/checksum assets instead of creating a duplicate Release.
+
+IMPORTANT TERMINOLOGY
+---------------------
+GitHub Packages is a package-manager registry for supported ecosystems
+such as NuGet, npm, Maven, RubyGems and containers. A standalone Windows
+EXE is therefore published as a GitHub Release asset instead.
+
+WORKFLOW PERMISSION
+-------------------
+The workflow declares:
+
+    permissions:
+      contents: write
+
+This gives the repository GITHUB_TOKEN permission to create Releases.
+No personal access token is required for the Release step.

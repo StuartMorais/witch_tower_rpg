@@ -334,3 +334,17 @@ The selection text is now atmospheric rather than explicit:
 The gameplay logic is unchanged:
 - BLUE keeps the current difficulty multiplier
 - RED doubles the current difficulty multiplier
+
+
+GITHUB RELEASE BUILDS
+---------------------
+Pushing a version tag such as:
+
+    v0.1.0
+
+now builds the Windows executable and publishes it to the repository's
+GitHub Releases page together with a SHA256 checksum.
+
+Normal pushes/manual builds still produce an Actions artifact.
+
+See GITHUB_BUILD_WINDOWS.txt for the complete release workflow.
