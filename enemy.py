@@ -15,7 +15,7 @@ class Enemy:
     boss: bool = False
 
 
-def make_enemy(theme, floor, boss=False):
+def make_enemy(theme, floor, boss=False, difficulty=1):
     depth = max(1, floor)
 
     if boss:
@@ -34,6 +34,15 @@ def make_enemy(theme, floor, boss=False):
         speed = 3 + depth // 7 + random.randint(0, 2)
         xp = 10 + depth * 4
         gold = random.randint(3, 7) + depth
+
+    # Optional boss-door difficulty path.
+    #
+    # We scale HP and attack only. Doubling defense as well would make
+    # effective difficulty grow by much more than 2x because player damage
+    # would simultaneously fall while enemy HP rises.
+    difficulty = max(1, int(difficulty))
+    hp = max(1, int(hp * difficulty))
+    attack = max(1, int(attack * difficulty))
 
     return Enemy(
         name=name,

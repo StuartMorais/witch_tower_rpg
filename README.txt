@@ -288,3 +288,33 @@ Examples:
 
 The title-screen rain uses separate RAIN_FRAMES and RAIN_DELAY values
 inside ui.py.
+
+
+BLUE / RED BOSS DOORS
+---------------------
+After every boss, the player chooses one of two paths:
+
+    BLUE DOOR
+        Keep the current difficulty multiplier.
+
+    RED DOOR
+        Double the current difficulty multiplier.
+
+The system is cumulative:
+
+    Start      x1
+    RED        x2
+    RED again  x4
+    RED again  x8
+    BLUE       keeps the current value
+
+Difficulty currently scales:
+- Enemy HP
+- Enemy Attack
+
+It intentionally does NOT scale enemy Defense, XP, or Gold. Scaling defense
+at the same time as HP would make a 2x choice much harsher than an actual
+2x increase because player damage would also drop.
+
+The selected multiplier is part of Player save data, so it persists through
+autosaves and is restored correctly by 20-floor Safe Haven death checkpoints.

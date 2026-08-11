@@ -131,6 +131,8 @@ class Game:
             "Every five floors share one theme and end with a boss.",
             "Boss floors: 5, 10, 15, 20, 25, 30...",
             "Recovery rooms appear after every boss.",
+            "Every boss reveals a BLUE door and a RED door.",
+            "BLUE keeps difficulty. RED doubles it.",
             "Progress autosaves after every cleared floor.",
             "Floors 20, 40, 60... also create death checkpoints.",
             "",
@@ -174,10 +176,16 @@ class Game:
                 completed_floor = self.player.floor
 
                 if boss:
+                    door_color, new_multiplier = ui.boss_door_choice(
+                        self.player.difficulty_multiplier
+                    )
+                    self.player.difficulty_multiplier = new_multiplier
+
                     is_safe_haven = completed_floor % 20 == 0
                     self.ascend_transition(
                         completed_floor + 1,
                         safe_haven=is_safe_haven,
+                        door_color=door_color,
                     )
 
                 self.player.floor += 1
@@ -194,8 +202,18 @@ class Game:
                     # Every cleared normal floor becomes the latest Continue point.
                     save_system.save_game(self.player, self.tower_seed)
 
-    def ascend_transition(self, next_floor, safe_haven=False):
-        animations.door_open(next_floor, safe_haven=safe_haven)
+    def ascend_transition(
+        self,
+        next_floor,
+        safe_haven=False,
+        door_color="blue",
+    ):
+        animations.door_open(
+            next_floor,
+            safe_haven=safe_haven,
+            door_color=door_color,
+            difficulty=self.player.difficulty_multiplier,
+        )
 
         ui.clear()
         ui.show_heart_hud()
@@ -209,7 +227,8 @@ class Game:
             title = "BOSS GATE"
 
         ui.box([
-            f"The path to Floor {next_floor} is now open.",
+            f"The {door_color.upper()} path to Floor {next_floor} is now open.",
+            f"Difficulty multiplier: x{self.player.difficulty_multiplier}",
             "",
             "The guardian is dead. Ancient stone doors have opened.",
             destination,
@@ -231,7 +250,12 @@ class Game:
             print()
 
         if room == "enemy":
-            enemy = make_enemy(theme, self.player.floor, boss=False)
+            enemy = make_enemy(
+                theme,
+                self.player.floor,
+                boss=False,
+                difficulty=self.player.difficulty_multiplier,
+            )
             result = run_combat(self.player, enemy)
             if result == "dead":
                 return "dead"
@@ -324,7 +348,12 @@ class Game:
         print("Something massive moves in the dark.")
         ui.pause()
 
-        enemy = make_enemy(theme, self.player.floor, boss=True)
+        enemy = make_enemy(
+            theme,
+            self.player.floor,
+            boss=True,
+            difficulty=self.player.difficulty_multiplier,
+        )
         result = run_combat(self.player, enemy)
 
         if result == "dead":
@@ -634,6 +663,10 @@ class Game:
             "THE TOWER",
             "Each group of five floors has one randomly selected theme.",
             "Floors 5, 10, 15, 20, etc. are boss floors.",
+            "After each boss, choose BLUE or RED.",
+            "BLUE keeps the current difficulty multiplier.",
+            "RED doubles it: x1 -> x2 -> x4 -> x8...",
+            "Difficulty scales enemy HP and attack.",
             "A recovery room appears after each boss.",
             "",
             "SAFE HAVENS",

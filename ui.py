@@ -71,6 +71,50 @@ def menu(options, prompt="Choose"):
         print(f"\nEnter a number from 1 to {len(options)}.\n")
 
 
+def boss_door_choice(current_multiplier):
+    """
+    Show the two post-boss paths.
+
+    BLUE keeps the current difficulty.
+    RED doubles it for all following floors until another RED doubles it again.
+    """
+    current_multiplier = max(1, int(current_multiplier))
+    red_multiplier = current_multiplier * 2
+
+    clear()
+    show_heart_hud()
+    print()
+
+    blue = ANSI_BLUE + "BLUE DOOR" + ANSI_RESET
+    red = ANSI_RED + "RED DOOR" + ANSI_RESET
+
+    print("      +----------------------+      +----------------------+")
+    print(f"      |      {blue:<31}|      |       {red:<30}|")
+    print("      |                      |      |                      |")
+    print("      |       ________       |      |       ________       |")
+    print("      |      |        |      |      |      |        |      |")
+    print("      |      |        |      |      |      |        |      |")
+    print("      |      |        |      |      |      |        |      |")
+    print("      |      |________|      |      |      |________|      |")
+    print("      +----------------------+      +----------------------+")
+    print()
+    print(f"      BLUE: keep difficulty x{current_multiplier}")
+    print(f"      RED : double difficulty to x{red_multiplier}")
+    print()
+    print("      Enemy HP and attack scale with the multiplier.")
+    print("      Enemy rewards and defense are unchanged.")
+    print()
+
+    choice = menu([
+        f"BLUE DOOR - stay at x{current_multiplier}",
+        f"RED DOOR - increase to x{red_multiplier}",
+    ], "Choose a door")
+
+    if choice == 1:
+        return "blue", current_multiplier
+    return "red", red_multiplier
+
+
 def pause(message="Press ENTER to continue..."):
     input("\n" + message)
 
@@ -162,6 +206,8 @@ def rain_tower_intro():
 
 ANSI_RESET = "\033[0m"
 ANSI_INVERT = "\033[7m"
+ANSI_BLUE = "\033[94m"
+ANSI_RED = "\033[91m"
 
 
 def _render_shifted(lines, x=0, y=0, flash=False):
@@ -410,6 +456,7 @@ def player_panel(player, show_hearts=True):
         f"XP   : {bar(player.xp, player.xp_to_next())} {player.xp}/{player.xp_to_next()}",
         f"ATK  : {player.attack:<5} DEF: {player.defense:<5} SPD: {player.speed:<5}",
         f"Crit : {int(player.crit * 100)}%    Evade: {int(player.evade * 100)}%    Gold: {player.gold}",
+        f"Difficulty: x{player.difficulty_multiplier}",
     ], title="HUNTER")
 
 

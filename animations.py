@@ -161,7 +161,7 @@ def _split_door_frame(art_lines, gap):
     return result
 
 
-def door_open(next_floor=None, safe_haven=False):
+def door_open(next_floor=None, safe_haven=False, door_color=None, difficulty=1):
     """Animate the boss gate after Floors 5, 10, 15, 20, etc."""
     art = load_art("door")
     lines = art.splitlines()
@@ -176,12 +176,19 @@ def door_open(next_floor=None, safe_haven=False):
         _draw(shifted, flash=(pad == 2))
         _sleep(0.055)
 
+    gate_name = ""
+    if door_color:
+        gate_name = f"{door_color.upper()} GATE - "
+
     if safe_haven:
-        label = "SAFE HAVEN AHEAD"
+        label = f"{gate_name}SAFE HAVEN AHEAD - DIFFICULTY x{difficulty}"
     elif next_floor is not None:
-        label = f"THE WAY TO FLOOR {next_floor} OPENS"
+        label = (
+            f"{gate_name}FLOOR {next_floor} OPENS - "
+            f"DIFFICULTY x{difficulty}"
+        )
     else:
-        label = "THE WAY OPENS"
+        label = f"{gate_name}THE WAY OPENS"
 
     for gap in (2, 5, 9, 14):
         frame = _split_door_frame(lines, gap)
@@ -310,7 +317,7 @@ def healing(start_hp=31, end_hp=49, max_hp=80, label="HEALING"):
 def run_showcase():
     attack_slash("Tower Guardian", 14)
     critical_hit(27, "Tower Guardian")
-    door_open(21, safe_haven=True)
+    door_open(21, safe_haven=True, door_color="red", difficulty=2)
     safe_haven_reveal(20)
     level_up(7, 8, 1)
     healing(31, 49, 80)

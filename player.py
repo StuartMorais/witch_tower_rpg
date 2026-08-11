@@ -21,6 +21,7 @@ class Player:
     inventory: dict = field(default_factory=dict)
     skill_points: int = 0
     skill_ranks: dict = field(default_factory=dict)
+    difficulty_multiplier: int = 1
 
     @classmethod
     def create(cls, name, class_id):
@@ -43,6 +44,7 @@ class Player:
             inventory={"Small Potion": 2},
             skill_points=1,
             skill_ranks={},
+            difficulty_multiplier=1,
         )
 
     @property
@@ -178,6 +180,7 @@ class Player:
             "inventory": self.inventory,
             "skill_points": self.skill_points,
             "skill_ranks": self.skill_ranks,
+            "difficulty_multiplier": self.difficulty_multiplier,
         }
 
     @classmethod
@@ -186,4 +189,5 @@ class Player:
         data = dict(data)
         data.setdefault("skill_points", max(1, data.get("level", 1)))
         data.setdefault("skill_ranks", {})
+        data.setdefault("difficulty_multiplier", 1)
         return cls(**data)
