@@ -29,6 +29,7 @@ class Game:
                 options.append(("manage", "Manage saved hunter"))
             options.extend([
                 ("new", "Start a new climb"),
+                ("records", "Tower Records"),
                 ("effects", "Open Effect Lab"),
                 ("help", "How to play"),
                 ("quit", "Leave camp"),
@@ -48,6 +49,10 @@ class Game:
             elif action == "manage":
                 self.load()
                 self.camp_manage_menu()
+
+            elif action == "records":
+                ui.tower_records_screen(save_system.tower_records())
+                ui.pause()
 
             elif action == "effects":
                 ui.effect_demo()
@@ -80,7 +85,8 @@ class Game:
 
             warning_lines.extend([
                 "",
-                "Starting a NEW climb permanently erases this run.",
+                "Starting a NEW climb permanently erases this playable run.",
+                "Its Tower Record will remain as ABANDONED.",
             ])
 
             ui.box(warning_lines, title="NEW RUN WARNING", border="=")
@@ -116,13 +122,19 @@ class Game:
 
         name = input("\nHunter name [Sarah] > ").strip() or "Sarah"
 
-        # A new run replaces the old character/checkpoint.
+        # A new run replaces the old playable character/checkpoint, but the
+        # previous climb remains permanently visible in Tower Records.
+        if save_system.has_save():
+            old_player, _ = save_system.load_game()
+            if old_player is not None:
+                save_system.finalize_run("ABANDONED", old_player)
+
         save_system.delete_save()
 
         self.player = Player.create(name, class_id)
         self.tower_seed = random.randint(100000, 999999999)
         self.tower = Tower(self.tower_seed)
-        save_system.reset_death_count()
+        save_system.start_new_run(self.player)
 
         ui.clear()
         ui.box([
@@ -153,6 +165,10 @@ class Game:
 
     def tower_loop(self):
         while self.player and self.player.hp > 0:
+            # Record the highest floor REACHED, even if the hunter dies here
+            # before clearing it. Safe Haven rewinds cannot lower this value.
+            save_system.update_run_progress(self.player)
+
             floor = self.player.floor
             theme = self.tower.theme_for_floor(floor)
             boss = self.tower.is_boss_floor(floor)
@@ -263,6 +279,7 @@ class Game:
                 print("You find another staircase and leave the room behind.")
                 ui.pause()
             else:
+                save_system.record_enemy_kill(self.player)
                 self.random_drop(boss=False)
             return "cleared"
 
@@ -359,6 +376,7 @@ class Game:
         if result == "dead":
             return "dead"
 
+        save_system.record_enemy_kill(self.player)
         self.random_drop(boss=True)
         return "cleared"
 
@@ -598,15 +616,17 @@ class Game:
         death_floor = self.player.floor
 
         # Death history is run-wide and is never restored from a checkpoint.
-        death_number, final_death = save_system.record_death()
+        death_number, final_death = save_system.record_death(self.player)
 
         # The fifth death destroys the run even if a Safe Haven exists.
         if final_death:
+            final_record = save_system.finalize_run("FALLEN", self.player)
             ui.final_permadeath_screen(
                 death_name,
                 death_floor,
                 death_number,
                 save_system.MAX_RUN_DEATHS,
+                record=final_record,
             )
             save_system.delete_save()
             self.player = None
@@ -617,12 +637,14 @@ class Game:
 
         # Original permadeath rule still applies before the first Safe Haven.
         if not save_system.has_checkpoint():
+            final_record = save_system.finalize_run("FALLEN", self.player)
             ui.death_rewind_screen(
                 death_name,
                 death_floor,
                 safe_floor=None,
                 death_number=death_number,
                 max_deaths=save_system.MAX_RUN_DEATHS,
+                record=final_record,
             )
             save_system.delete_save()
             self.player = None
@@ -638,6 +660,7 @@ class Game:
             safe_floor=safe_floor,
             death_number=death_number,
             max_deaths=save_system.MAX_RUN_DEATHS,
+            record=save_system.current_run_record(),
         )
         ui.pause("Press ENTER to return to the Safe Haven...")
 
@@ -671,6 +694,8 @@ class Game:
             "",
             "SAFE HAVENS",
             "Every cleared floor creates a normal autosave.",
+            "Tower Records survive permadeath and New Run.",
+            "Records keep floor, hunter/status, deaths, difficulty, kills, and score.",
             "Floors 20, 40, 60, 80... create protected death checkpoints.",
             "Normal autosaves are only for Continue, never resurrection.",
             "",

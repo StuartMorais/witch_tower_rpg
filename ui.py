@@ -487,10 +487,90 @@ def camp_screen(has_save, has_checkpoint=False):
     else:
         print("\n  No saved climb. Death before Floor 20 ends the run.\n")
 
+
+def tower_records_screen(records):
+    """
+    Permanent run history.
+
+    There is intentionally NO Attempts counter and NO Bosses Defeated stat.
+    Each entry in the history represents one climb.
+    """
+    clear()
+    show_heart_hud()
+    print()
+
+    if not records:
+        box([
+            "No hunter has left a Tower Record yet.",
+            "",
+            "Start a climb and the tower will remember it.",
+        ], title="TOWER RECORDS", border="=")
+        return
+
+    best_floor = max(records, key=lambda r: int(r.get("highest_floor", 1)))
+    best_score = max(records, key=lambda r: int(r.get("best_score", 0)))
+    best_difficulty = max(
+        records,
+        key=lambda r: int(r.get("highest_difficulty", 1)),
+    )
+    best_kills = max(records, key=lambda r: int(r.get("enemies_killed", 0)))
+
+    box([
+        (
+            f"Highest Floor : {best_floor.get('highest_floor', 1)} - "
+            f"{best_floor.get('character_name', 'Unknown')} "
+            f"[{best_floor.get('status', 'UNKNOWN')}]"
+        ),
+        (
+            f"Best Score    : {int(best_score.get('best_score', 0)):,} - "
+            f"{best_score.get('character_name', 'Unknown')} "
+            f"[{best_score.get('status', 'UNKNOWN')}]"
+        ),
+        (
+            f"Highest Diff. : x{best_difficulty.get('highest_difficulty', 1)} - "
+            f"{best_difficulty.get('character_name', 'Unknown')}"
+        ),
+        (
+            f"Most Enemies  : {best_kills.get('enemies_killed', 0)} - "
+            f"{best_kills.get('character_name', 'Unknown')}"
+        ),
+    ], title="TOWER RECORDS - ALL TIME BEST", border="=")
+
+    print()
+    print("  HIGHEST CLIMBS")
+    print("  " + "-" * 48)
+
+    # Records are already ranked by highest floor / score.
+    for rank, record in enumerate(records, 1):
+        name = str(record.get("character_name", "Unknown Hunter"))
+        class_name = str(record.get("class_name", "Unknown"))
+        status = str(record.get("status", "UNKNOWN"))
+        floor = int(record.get("highest_floor", 1))
+        deaths = int(record.get("deaths", 0))
+        difficulty = int(record.get("highest_difficulty", 1))
+        enemies = int(record.get("enemies_killed", 0))
+        score = int(record.get("best_score", 0))
+
+        box([
+            f"#{rank:02d}  {name} [{status}] - {class_name}",
+            f"Highest Floor : {floor}",
+            f"Deaths        : {deaths}/{save_system.MAX_RUN_DEATHS}",
+            f"Difficulty    : x{difficulty}",
+            f"Enemies Killed: {enemies}",
+            f"Best Score    : {score:,}",
+        ], border="-")
+        print()
+
+
 def player_panel(player, show_hearts=True):
     if show_hearts:
         show_heart_hud()
         print()
+
+    record = save_system.current_run_record() or {}
+    record_floor = record.get("highest_floor", player.floor)
+    enemies_killed = record.get("enemies_killed", 0)
+    best_score = record.get("best_score", 0)
 
     box([
         f"Name : {player.name:<18} Class : {player.class_name}",
@@ -500,6 +580,7 @@ def player_panel(player, show_hearts=True):
         f"ATK  : {player.attack:<5} DEF: {player.defense:<5} SPD: {player.speed:<5}",
         f"Crit : {int(player.crit * 100)}%    Evade: {int(player.evade * 100)}%    Gold: {player.gold}",
         f"Difficulty: x{player.difficulty_multiplier}",
+        f"Record Floor: {record_floor}   Enemies: {enemies_killed}   Score: {best_score:,}",
     ], title="HUNTER")
 
 
@@ -575,6 +656,7 @@ def death_rewind_screen(
     safe_floor=None,
     death_number=None,
     max_deaths=5,
+    record=None,
 ):
     clear()
     show_heart_hud()
@@ -595,6 +677,15 @@ def death_rewind_screen(
         if count_line:
             lines.insert(2, count_line)
 
+        if record:
+            lines.extend([
+                "",
+                f"Highest Floor : {record.get('highest_floor', death_floor)}",
+                f"Difficulty    : x{record.get('highest_difficulty', 1)}",
+                f"Enemies Killed: {record.get('enemies_killed', 0)}",
+                f"Best Score    : {int(record.get('best_score', 0)):,}",
+            ])
+
         box(lines, title="PERMADEATH", border="=")
         return
 
@@ -604,26 +695,56 @@ def death_rewind_screen(
         "",
         count_line,
         f"Deaths remaining before permanent death: {remaining}",
+    ]
+
+    if record:
+        lines.extend([
+            f"Record Floor  : {record.get('highest_floor', death_floor)}",
+            f"Enemies Killed: {record.get('enemies_killed', 0)}",
+            f"Best Score    : {int(record.get('best_score', 0)):,}",
+        ])
+
+    lines.extend([
         "",
         f"Safe Haven after Floor {safe_floor} answers the death.",
         f"Everything gained after that checkpoint is lost.",
         f"You return to the saved state and resume at Floor {safe_floor + 1}.",
-    ]
+    ])
     box(lines, title="DEATH - CHECKPOINT REWIND", border="=")
 
 
-def final_permadeath_screen(name, death_floor, death_number, max_deaths=5):
+def final_permadeath_screen(
+    name,
+    death_floor,
+    death_number,
+    max_deaths=5,
+    record=None,
+):
     clear()
     show_heart_hud()
     print()
-    box([
+    lines = [
         f"{name} fell on Floor {death_floor}.",
         "",
         f"Run deaths: {death_number}/{max_deaths}",
+    ]
+
+    if record:
+        lines.extend([
+            f"Highest Floor : {record.get('highest_floor', death_floor)}",
+            f"Difficulty    : x{record.get('highest_difficulty', 1)}",
+            f"Enemies Killed: {record.get('enemies_killed', 0)}",
+            f"Best Score    : {int(record.get('best_score', 0)):,}",
+        ])
+
+    lines.extend([
         "",
         "The final death has been spent.",
         "No Safe Haven can call this hunter back.",
         "",
-        "The entire run is permanently erased.",
+        "The playable run is permanently erased.",
+        "Its Tower Record remains at Thornwatch Camp.",
         "A new hunter must begin again from Floor 1.",
-    ], title="FINAL PERMADEATH", border="=")
+    ])
+
+    box(lines, title="FINAL PERMADEATH", border="=")

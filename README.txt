@@ -366,3 +366,33 @@ The BLUE and RED boss-door choice screen now:
 - shows "BLUE DOOR" and "RED DOOR" clearly above the doors
 - renders both tinted door.txt arts side by side
 - keeps the subtle wind / miasma presentation
+
+
+TOWER RECORDS
+-------------
+Thornwatch Camp now keeps permanent run records in:
+
+    saves/tower_records.json
+
+Records survive permadeath and starting a new climb.
+
+Each run records:
+- Character name
+- Character status: ACTIVE, FALLEN, or ABANDONED
+- Highest floor reached
+- Deaths
+- Highest difficulty multiplier
+- Enemies killed
+- Best score
+
+There is intentionally no Attempts counter and no Bosses Defeated counter.
+Each entry in the record history represents one climb.
+
+Score emphasizes tower progress and risky RED-door play:
+- +100 per floor beyond Floor 1
+- +25 per enemy killed
+- +750 per RED-door difficulty increase
+- -200 per death
+
+The run keeps its highest score achieved, even if a later death lowers the
+current calculated score.
